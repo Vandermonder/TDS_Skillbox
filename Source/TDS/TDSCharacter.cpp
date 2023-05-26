@@ -11,6 +11,9 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Materials/Material.h"
 #include "Engine/World.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
+
 
 ATDSCharacter::ATDSCharacter()
 {
@@ -86,5 +89,40 @@ void ATDSCharacter::Tick(float DeltaSeconds)
 			CursorToWorld->SetWorldLocation(TraceHitResult.Location);
 			CursorToWorld->SetWorldRotation(CursorR);
 		}
+	}
+
+	MovementTick(DeltaSeconds);
+}
+
+void ATDSCharacter::SetupPlayerInputComponent(UInputComponent* InputComponentPtr)
+{
+	Super::SetupPlayerInputComponent(InputComponentPtr);
+
+	InputComponentPtr->BindAxis(TEXT("MoveForward"), this, &ATDSCharacter::InputAxisX);
+	InputComponentPtr->BindAxis(TEXT("MoveRight"), this, &ATDSCharacter::InputAxisY);
+}
+
+void ATDSCharacter::InputAxisX(float Value) 
+{
+	AxisX = Value;
+}
+
+void ATDSCharacter::InputAxisY(float Value)
+{
+	AxisY = Value;
+}
+
+void ATDSCharacter::MovementTick(float DeltaTime)
+{
+	AddMovementInput(FVector(1.0f, 0.0f, 0.0f), AxisX);
+	AddMovementInput(FVector(0.0f, 1.0f, 0.0f), AxisY);
+
+	APlayerController* myController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	if (myController && 0)
+	{
+		FHitResult ResultHit;
+		myController->GetHitResultUnderCursorByChannel(ETraceTypeQuery::TraceTypeQuery6, false, ResultHit);
+		auto rotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), ResultHit.Location);
+		SetActorRotation(FQuat(FRotator(0.0f, rotation.Yaw, 0.0f)));
 	}
 }
